@@ -15,7 +15,7 @@ class PullRequestReviewer(ABC):
     def _get_pull_request_content(self, pull_request_number: int) -> str:
         pr = self.repository.get_pull_request(pull_request_number)
         changes = self.repository.get_pull_request_changes(pull_request_number)
-        header_content = f"Pull request title: {pr.title}\n\nPull request description: {pr.description}"
+        header_content = f"Pull request title: {pr.title}"
         change_content = "\n\n\n".join([f"File: {change.file_path}\n{change.patch}" for change in changes])
         pr_content = f"{header_content}\n\nPull request changes:\n{change_content}"
         return pr_content
