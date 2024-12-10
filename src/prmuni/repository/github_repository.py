@@ -14,9 +14,6 @@ class GitHubRepository(GitRepository):
             token=self.github_token
         )
 
-    def get_files(self) -> List[FileContent]:
-        pass
-
     def get_pull_requests(self) -> List[PullRequest]:
         pull_requests = []
         pages = paged(self.api.pulls.list)
@@ -26,6 +23,7 @@ class GitHubRepository(GitRepository):
                     pull_request_number=item.number,
                     title=item.title,
                     description=item.body,
+                    head_sha=item.head.sha,
                     source_branch_label=item.head.label,
                     target_branch_label=item.base.label,
                     created_by=item.user.login,
@@ -34,22 +32,9 @@ class GitHubRepository(GitRepository):
                 pull_requests.append(pr)
         return pull_requests
 
-    def get_pull_request(self, pull_request_number: int) -> PullRequest:
-        item = self.api.pulls.get(pull_number=pull_request_number)
-        pr = PullRequest(
-            pull_request_number=item.number,
-            title=item.title,
-            description=item.body,
-            source_branch_label=item.head.label,
-            target_branch_label=item.base.label,
-            created_by=item.user.login,
-            created_at=item.created_at
-        )
-        return pr
-
-    def get_pull_request_changes(self, pull_request_number: int) -> List[FilePatch]:
+    def get_pull_request_changes(self, pull_request: PullRequest) -> List[FilePatch]:
         patches = []
-        pages = paged(self.api.pulls.list_files, pull_number=pull_request_number)
+        pages = paged(self.api.pulls.list_files, pull_number=pull_request.id)
         for page in pages:
             for item in page:
                 patch = FilePatch(file_path=item.filename, patch=item.patch)

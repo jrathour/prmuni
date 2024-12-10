@@ -1,7 +1,7 @@
 from langchain_core.language_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from ..core import PullRequestReviewer, GitRepository
+from ..core import PullRequestReviewer, GitRepository, PullRequest
 from .prompts import SYSTEM_PROMPT, SIMPLE_REVIEWER_PROMPT
 
 
@@ -10,9 +10,9 @@ class SimpleReviewer(PullRequestReviewer):
         super().__init__(llm, repository)
         self.chain = self._create_review_chain()
 
-    def review(self, pull_request_number: int) -> str:
-        pr_content = self._get_pull_request_content(pull_request_number)
-        response = self.chain.invoke({"pr_content": pr_content})
+    def review(self, pull_request: PullRequest) -> str:
+        pr_content: str = self._get_pull_request_prompt_content(pull_request)
+        response: str = self.chain.invoke({"pr_content": pr_content})
         return response
 
     def _create_review_chain(self):

@@ -82,7 +82,7 @@ if st.session_state.review_section_available:
         st.divider()
         try:
             with st.spinner("Reviewing pull request..."):
-                review_text = st.session_state.reviewer.review(st.session_state.pull_request.id)
+                review_text = st.session_state.reviewer.review(st.session_state.pull_request)
                 st.write(review_text, unsafe_allow_html=True)
         except Exception as ex:
             st.error(f"Error reviewing the pull request. Please check if the provided options are correct and try again.")
