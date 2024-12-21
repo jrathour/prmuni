@@ -1,17 +1,20 @@
 from typing import List, Tuple
 from urllib.parse import urlparse
 from ghapi.all import GhApi, paged
+from git import Repo
+
 from ..core import GitRepository, FileContent, PullRequest, FilePatch
 
 
 class GitHubRepository(GitRepository):
-    def __init__(self,repository_url: str,token: str):
-        self.github_token: str = token
+    def __init__(self,repository_url: str,token: str=None):
+        self.token: str = token
         self.owner, self.repo = GitHubRepository._parse_repository_url(repository_url)
+        self.local_repo = None
         self.api = GhApi(
             owner=self.owner,
             repo=self.repo,
-            token=self.github_token
+            token=self.token
         )
 
     def get_pull_requests(self) -> List[PullRequest]:
@@ -24,10 +27,6 @@ class GitHubRepository(GitRepository):
                     title=item.title,
                     description=item.body,
                     head_sha=item.head.sha,
-                    source_branch_label=item.head.label,
-                    target_branch_label=item.base.label,
-                    created_by=item.user.login,
-                    created_at=item.created_at
                 )
                 pull_requests.append(pr)
         return pull_requests
@@ -41,6 +40,21 @@ class GitHubRepository(GitRepository):
                 patches.append(patch)
         return patches
 
+    def clone(self, path: str):
+        self.local_repo = self._clone_repository(self._create_repo_url(), path)
+
+    def get_pull_request_head_content(self) -> List[FileContent]:
+        pass
+        # if self.local_repo is None:
+        #     raise ValueError("Repository is not cloned locally. Please clone it first.")
+        
+
+    def _create_repo_url(self):
+        prefix = ""
+        if self.token is not None and len(self.token.strip()) > 0:
+            prefix = f"{self.token}@"
+        return f"https://{prefix}github.com/{self.owner}/{self.repo}"
+
     @staticmethod
     def _parse_repository_url(url: str) -> Tuple[str,str]:
         parsed_url = urlparse(url)
@@ -50,5 +64,4 @@ class GitHubRepository(GitRepository):
             repo: str = path_parts[1]
             return owner, repo
         else:
-            raise ValueError("Invalid github repository url. "
-                             "It must be in format https://github.com/<owner>/<repository name>")
+            raise ValueError("Invalid github repository url. It must be in format https://github.com/<owner>/<repository name>")

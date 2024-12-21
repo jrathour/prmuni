@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List
-from datetime import datetime
+from git import Repo
 
 
 class FileContent:
@@ -21,18 +21,12 @@ class PullRequest:
                  title: str,
                  description: str,
                  head_sha: str,
-                 source_branch_label: str,
-                 target_branch_label: str,
-                 created_by: str,
-                 created_at: datetime):
+                 changes: List[FilePatch]=None):
         self.id: int = pull_request_number
         self.title: str = title
         self.description: str = description
         self.head_sha: str = head_sha
-        self.source_branch_label: str = source_branch_label
-        self.target_branch_label: str = target_branch_label
-        self.created_by: str = created_by
-        self.created_at: datetime = created_at
+        self.changes: List[FilePatch] = changes
 
 
 class GitRepository(ABC):
@@ -44,6 +38,11 @@ class GitRepository(ABC):
     def get_pull_request_changes(self, pull_request: PullRequest) -> List[FilePatch]:
         pass
 
-    # @abstractmethod
-    # def get_repository_content_at_pull_request_head(self, pull_request: PullRequest) -> List[FileContent]:
-    #     pass
+    @abstractmethod
+    def clone(self, path: str) -> Repo:
+        pass
+
+    @staticmethod
+    def _clone_repository(repository_url: str, path: str, no_checkout=True) -> Repo:
+        repo = Repo.clone_from(url=repository_url, to_path=path, no_checkout=no_checkout)
+        return repo

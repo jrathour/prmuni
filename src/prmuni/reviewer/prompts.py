@@ -5,3 +5,4 @@ SIMPLE_REVIEWER_PROMPT = '''Review following pull request.
 
 {pr_content}
 '''
+

@@ -6,17 +6,18 @@ TITLE = "PR Muni"
 SUB_TITLE = "An LLM based pull request reviewer."
 REPOSITORY_HOSTS = { "github": "GitHub" }
 LLM_MODELS = { "gemini-1.5-flash": "gemini-1.5-flash" }
-REVIEWERS = { "change-only-reviewer": "Pull request changes only" }
+REVIEWERS = { "simple-reviewer": "No additional context" }
 
 st.set_page_config(page_title=TITLE, layout="wide")
 
 def on_options_form_submit():
     try:
         repo = GitHubRepository(st.session_state.repository_url, st.session_state.repo_host_access_token)
-        llm = ChatGoogleGenerativeAI(model=st.session_state.llm_model, google_api_key=st.session_state.llm_api_key)
-        st.session_state.reviewer = SimpleReviewer(llm,repo)
         with st.spinner("Fetching pull requests..."):
             st.session_state.pull_requests = repo.get_pull_requests()
+        st.session_state.repo = repo
+        llm = ChatGoogleGenerativeAI(model=st.session_state.llm_model, google_api_key=st.session_state.llm_api_key)
+        st.session_state.reviewer = SimpleReviewer(llm)
         st.session_state.review_section_available = True
     except Exception as e:
         st.error(f"Error getting repository details. Please check if the provided options are correct and try again.")
@@ -62,7 +63,7 @@ with st.sidebar.form(key="options_form", enter_to_submit=False, border=False):
 
     # Context options
     st.caption("Prompt options")
-    st.selectbox(label="Prompt content options*",
+    st.selectbox(label="Additional context*",
                  options=REVIEWERS,
                  key="prompt_option",
                  format_func=lambda option: REVIEWERS[option])
@@ -81,6 +82,9 @@ if st.session_state.review_section_available:
     if st.button(label="Review", type="primary"):
         st.divider()
         try:
+            if st.session_state.pull_request.changes is None:
+                with st.spinner("Fetching pull request changes..."):
+                    st.session_state.pull_request.changes = st.session_state.repo.get_pull_request_changes(st.session_state.pull_request)
             with st.spinner("Reviewing pull request..."):
                 review_text = st.session_state.reviewer.review(st.session_state.pull_request)
                 st.write(review_text, unsafe_allow_html=True)
